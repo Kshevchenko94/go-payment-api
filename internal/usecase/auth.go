@@ -10,6 +10,8 @@ import (
 	"uuid"
 )
 
+var ErrUserAlreadyExists = errors.New("user with this email already exists")
+
 type AuthInteractor struct {
 	userRepo domain.UserRepository
 }
@@ -20,15 +22,19 @@ func NewAuthInteractor(repo domain.UserRepository) *AuthInteractor {
 	}
 }
 
-func (ai *AuthInteractor) Register(ctx context.Context, email, password string) error {
-	_, err := ai.userRepo.GetByEmail(ctx, email)
+func (ai *AuthInteractor) Register(ctx context.Context, email, password string) (*domain.User, error) {
+	user, err := ai.userRepo.GetByEmail(ctx, email)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return err
+		return nil, err
+	}
+
+	if user != nil {
+		return nil, ErrUserAlreadyExists
 	}
 
 	passwordHashed, err := crypto.HashPassword(password)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	newUser := &domain.User{
@@ -39,5 +45,5 @@ func (ai *AuthInteractor) Register(ctx context.Context, email, password string) 
 	}
 	ai.userRepo.Create(ctx, newUser)
 
-	return nil
+	return newUser, nil
 }

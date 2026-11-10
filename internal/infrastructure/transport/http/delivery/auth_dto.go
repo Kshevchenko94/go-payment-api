@@ -18,6 +18,11 @@ type RegisterRequest struct {
 	Password string `json:"password"`
 }
 
+type RegisterResponse struct {
+	ID    string `json:"id"`
+	Email string `json:"email"`
+}
+
 func (r *RegisterRequest) Validate() error {
 	r.Email = strings.TrimSpace(r.Email)
 
