@@ -17,5 +17,4 @@ type UserRepository interface {
 	GetList(ctx context.Context) ([]*User, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
 	Update(ctx context.Context, id string, u *User) (*User, error)
-	IsExists(ctx context.Context, id string) (bool, error)
 }
