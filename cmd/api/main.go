@@ -3,9 +3,13 @@ package main
 import (
 	"log"
 	"log/slog"
+	"net/http"
 	"os"
+	"time"
 
 	"Kshevchenko94/go-payment-api/internal/infrastructure/storage"
+	"Kshevchenko94/go-payment-api/internal/infrastructure/transport/http/delivery"
+	"Kshevchenko94/go-payment-api/internal/usecase"
 
 	"github.com/joho/godotenv"
 )
@@ -36,10 +40,27 @@ func main() {
 	logger.Info("successfully connected to postgres pool")
 
 	// В будущем переменная db передастся в репозитории:
-	// userRepo := storage.NewUserRepository(db)
+	userRepo := storage.NewUserRepository(db)
+	authUseCase := usecase.NewAuthInteractor(userRepo)
+	authHandler := delivery.NewAuthHandler(authUseCase)
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /api/v1/auth/register", authHandler.Register)
+
+	s := http.Server{
+		Addr:         ":8080",
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 90 * time.Second,
+		IdleTimeout:  120 * time.Second,
+		Handler:      mux,
+	}
 
 	logger.Info("starting http server on :8080")
-	// Здесь будет код запуска http.ListenAndServe
+	err = s.ListenAndServe()
+	if err != nil && err != http.ErrServerClosed {
+		logger.Error("server failed", "error", err)
+		os.Exit(1)
+	}
 }
 
 func getEnv(key, fallback string) string {

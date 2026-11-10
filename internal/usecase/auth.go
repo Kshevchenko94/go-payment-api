@@ -2,14 +2,12 @@ package usecase
 
 import (
 	"Kshevchenko94/go-payment-api/internal/domain"
+	"Kshevchenko94/go-payment-api/internal/pkg/crypto"
 	"context"
+	"database/sql"
 	"errors"
 	"time"
 	"uuid"
-)
-
-var (
-	ErrUserExist = errors.New("User does exist.")
 )
 
 type AuthInteractor struct {
@@ -23,16 +21,15 @@ func NewAuthInteractor(repo domain.UserRepository) *AuthInteractor {
 }
 
 func (ai *AuthInteractor) Register(ctx context.Context, email, password string) error {
-	user, err := ai.userRepo.GetByEmail(ctx, email)
-	if err != nil {
+	_, err := ai.userRepo.GetByEmail(ctx, email)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
 
-	if user != nil {
-		return ErrUserExist
+	passwordHashed, err := crypto.HashPassword(password)
+	if err != nil {
+		return err
 	}
-
-	passwordHashed := ""
 
 	newUser := &domain.User{
 		ID:           uuid.NewV4().String(),
