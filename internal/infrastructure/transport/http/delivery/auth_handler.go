@@ -33,5 +33,10 @@ func (a *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid json schema", http.StatusBadRequest)
 		return
 	}
-	a.AuthuseCase.Register(r.Context(), req.Email, req.Password)
+	err = a.AuthuseCase.Register(r.Context(), req.Email, req.Password)
+	if err != nil {
+		http.Error(w, "invalid json schema", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
 }
